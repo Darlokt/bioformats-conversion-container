@@ -1,0 +1,61 @@
+# Lint, then build, smoke-test and publish the image to GHCR in two channels, each
+# built, tested and released on its own (.github/workflows/image.yml):
+#   unstable: the submodules as pinned in this repo
+#   stable:   every submodule at its newest upstream release tag (scripts/checkout-releases.sh)
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['**']
+  pull_request:
+  # "Run workflow" button / API, and scheduled rebuilds to pick up new Temurin and
+  # upstream releases
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 2'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate Dockerfile
+        uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5 # v3.3.0
+        with:
+          dockerfile: Dockerfile
+          config: .hadolint.yaml
+
+      - name: Validate shell scripts and Dockerfile build checks
+        run: |
+          shellcheck scripts/*.sh tests/smoke.sh
+          docker build --check .
+
+      - name: Validate GitHub Actions syntax
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+
+  image:
+    name: ${{ matrix.channel }}
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [unstable, stable]
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    uses: ./.github/workflows/image.yml
+    with:
+      channel: ${{ matrix.channel }}

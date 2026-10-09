@@ -1,0 +1,9 @@
+[submodule "bioformats"]
+	path = dependencies/bioformats
+	url = https://github.com/ome/bioformats.git
+[submodule "bioformats2raw"]
+	path = dependencies/bioformats2raw
+	url = https://github.com/glencoesoftware/bioformats2raw.git
+[submodule "raw2ometiff"]
+	path = dependencies/raw2ometiff
+	url = https://github.com/glencoesoftware/raw2ometiff.git

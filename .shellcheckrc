@@ -1,0 +1,3 @@
+# Scripts source build.env from the repository root
+external-sources=true
+source-path=SCRIPTDIR/..

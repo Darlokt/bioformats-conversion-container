@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # Moves the unstable channel's submodule pins forward
+  - package-ecosystem: gitsubmodule
+    directory: /
+    schedule:
+      interval: weekly
+    labels: [dependencies, submodules]
+
+  - package-ecosystem: github-actions
+    directories: [/, /.github/actions/*]
+    schedule:
+      interval: weekly
+    labels: [dependencies, github-actions]
+

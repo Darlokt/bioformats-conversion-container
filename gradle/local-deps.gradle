@@ -1,0 +1,35 @@
+// Gradle init script: wires the submodule builds together without editing them.
+//  - forces Bio-Formats / bioformats2raw dependencies to the locally built versions
+//  - compiles with the container's JDK instead of the toolchain version in build.gradle
+
+def bfVersion = System.getenv('BF_VERSION')
+def b2rVersion = System.getenv('B2R_VERSION')
+def javaVersion = System.getenv('JAVA_VERSION')
+
+def bfArtifacts = ['formats-api', 'formats-bsd', 'formats-gpl', 'turbojpeg',
+                   'bio-formats-tools', 'bio-formats_plugins', 'bioformats_package']
+
+allprojects {
+    configurations.configureEach {
+        resolutionStrategy.eachDependency { details ->
+            def req = details.requested
+            if (bfVersion && req.group == 'ome' && req.name in bfArtifacts) {
+                details.useVersion(bfVersion)
+                details.because('locally built Bio-Formats submodule')
+            }
+            if (b2rVersion && req.group == 'com.glencoesoftware' && req.name == 'bioformats2raw') {
+                details.useVersion(b2rVersion)
+                details.because('locally built bioformats2raw submodule')
+            }
+        }
+    }
+    // afterEvaluate: must run after build.gradle sets its own toolchain
+    afterEvaluate {
+        plugins.withId('java') {
+            if (javaVersion) {
+                extensions.getByType(JavaPluginExtension).toolchain.languageVersion =
+                    JavaLanguageVersion.of(javaVersion as int)
+            }
+        }
+    }
+}

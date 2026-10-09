@@ -1,0 +1,12 @@
+# Only what the Dockerfile copies
+*
+!dependencies/
+!gradle/local-deps.gradle
+!tests/smoke.sh
+
+# VCS data and local build output inside the submodules (bin: IDE builds)
+**/.git
+**/.gradle
+**/bin
+**/build
+**/target

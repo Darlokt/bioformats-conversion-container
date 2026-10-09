@@ -1,0 +1,8 @@
+ignored:
+  # Base images and apt packages follow the newest releases on purpose
+  - DL3006
+  - DL3008
+  # cd in a RUN subshell is intended
+  - DL3003
+trustedRegistries:
+  - docker.io

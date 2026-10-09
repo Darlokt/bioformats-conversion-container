@@ -1,0 +1,41 @@
+name: Set up registry
+description: Derive the GHCR image name, install regctl and log Docker and regctl in to GHCR
+
+inputs:
+  token:
+    description: Token with access to the repository's packages
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Derive image name
+      shell: bash
+      run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "${GITHUB_ENV}"
+
+    - name: Install regctl
+      shell: bash
+      env:
+        REGCTL_VERSION: v0.11.6
+        REGCTL_SHA256: 8e0e62a497fcdb8048d18aa927a139613176ba0531f412bc541044e28f9856bd
+      run: |
+        mkdir -p "${RUNNER_TEMP}/bin"
+        curl -fsSLo "${RUNNER_TEMP}/bin/regctl" \
+          "https://github.com/regclient/regclient/releases/download/${REGCTL_VERSION}/regctl-linux-amd64"
+        echo "${REGCTL_SHA256}  ${RUNNER_TEMP}/bin/regctl" | sha256sum -c -
+        chmod +x "${RUNNER_TEMP}/bin/regctl"
+        echo "${RUNNER_TEMP}/bin" >> "${GITHUB_PATH}"
+
+    - name: Log Docker in to GHCR
+      uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ inputs.token }}
+
+    - name: Log regctl in to GHCR
+      shell: bash
+      env:
+        ACTOR: ${{ github.actor }}
+        TOKEN: ${{ inputs.token }}
+      run: printf '%s\n' "${TOKEN}" | "${RUNNER_TEMP}/bin/regctl" registry login ghcr.io -u "${ACTOR}" --pass-stdin
